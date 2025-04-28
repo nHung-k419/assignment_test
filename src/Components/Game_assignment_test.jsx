@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-
+import { debounce } from 'lodash';
 const Game_assignment_test = () => {
     const [count, setCount] = useState(0);
     const [valuePoints, setValuePoints] = useState('')
@@ -73,27 +73,35 @@ const Game_assignment_test = () => {
 
 
     const handleCheck = (keyItem, x) => {
-        setFlagPoints(prev => prev + 1)
+        setFlagPoints(flagPoints + 1)
         setPoints(x)
         if (flagPoints === keyItem) {
-            let result = positionedElements.filter(item => {
+            let result = positionedElements.findIndex(item => {
                 if (item.value === keyItem) {
                     return keyItem = item.value
                 }
-            })
-            const resultOver = positionedElements.filter(itemPoints => itemPoints.value !== result[0].value)
-            if (resultOver.length === 0) {
-                setFlagPoints(1)
-                keyItem = 1
-            }
-            const timeOutValid = setTimeout(() => {
-                setPositionedElements(resultOver)
-            }, 700)
+            }) 
+            
+            setTimeout(() => {
+                if(isSatusPoint){
+                    const resultOver = positionedElements.splice(result, 1)
+                    console.log(resultOver);
+                }
+            }, 500)
+
+            // if (resultOver.length === 0) {
+            //     setFlagPoints(1)
+            //     keyItem = 1
+            // }
+            // setTimeout(() => {
+            //     setPositionedElements(resultOver)
+            // }, 700)
 
         } else {
             setIsStatusPoint(false)
         }
     }
+    const debouncedHandleClick = debounce(handleCheck, 100)
     return (
         <div style={{ marginLeft: '40px' }}>
             <div>
@@ -110,7 +118,7 @@ const Game_assignment_test = () => {
             </div>
             <div ref={containerRef} style={{ width: '500px', height: '400px', border: '1px solid gray', marginTop: '20px', position: 'relative' }}>
                 {positionedElements.map((item, index) => (
-                    <div key={item.value} onClick={() => { handleCheck(item.value, item.x) }} style={{
+                    <div key={item.value} onClick={() => { debouncedHandleClick(item.value, item.x) }} style={{
                         width: '30px',
                         height: '30px',
                         borderRadius: '50%',
