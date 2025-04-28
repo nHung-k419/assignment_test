@@ -8,17 +8,33 @@ const Game_assignment_test = () => {
     const [points, setPoints] = useState();
     const [flagPoints, setFlagPoints] = useState(1)
     const [isStart, setIsStart] = useState(1)
-    const [numbersToRender, setNumbersToRender] = useState([]);
+    const [isSatusPoint, setIsStatusPoint] = useState(true)
     const containerRef = useRef(null);
+    const intervalRef = useRef(null);
     const handleGetPoints = (e) => {
         setValuePoints(e)
 
     }
+    console.log(isSatusPoint)
+
     const handleClickRestart = () => {
         generateRandomNumber(valuePoints)
-        setValuePoints('')
+        // setValuePoints('')
+        setFlagPoints(1)
         setCount(0)
+        setIsStatusPoint(true)
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+        }
+
+        const startTime = Date.now();
+        intervalRef.current = setInterval(() => {
+            const currentTime = Date.now();
+            const elapsedMilliseconds = currentTime - startTime;
+            setCount(elapsedMilliseconds / 1000);
+        }, 10);
     }
+
     const generateRandomNumber = (valuePoints) => {
         const Numbers = []
         for (let i = 1; i <= parseInt(valuePoints); i++) {
@@ -47,79 +63,44 @@ const Game_assignment_test = () => {
 
 
     const handleCheck = (keyItem, x) => {
-        // console.log(keyItem);
-        // console.log(positionedElements);
-
-        let current = keyItem
-        setFlagPoints(flagPoints + 1)
+        setFlagPoints(prev => prev + 1)
         setPoints(x)
-        console.log('flagPoints', flagPoints);
-        console.log('keyItem', keyItem);
         if (flagPoints === keyItem) {
             let result = positionedElements.filter(item => {
-                if (item.value === current) {
-                    return current = item.value
+                if (item.value === keyItem) {
+                    return keyItem = item.value
                 }
             })
             const resultOver = positionedElements.filter(itemPoints => itemPoints.value !== result[0].value)
-
             if (resultOver.length === 0) {
                 setFlagPoints(1)
+                keyItem = 1
             }
             const timeOutValid = setTimeout(() => {
                 setPositionedElements(resultOver)
             }, 700)
-            return () => {
-                clearInterval(timeOutValid)
-            }
 
+        } else {
+            setIsStatusPoint(false)
         }
-
     }
-
-
-    useEffect(() => {
-        const intervalId = setInterval(() => {
-            setCount((prevCount) => prevCount + 1);
-        }, 1000);
-        return () => {
-            clearInterval(intervalId);
-        };
-    }, []);
-
     return (
         <div style={{ marginLeft: '40px' }}>
             <div>
-                <h1 style={positionedElements.length === 0 ? { color: 'green' } : { color: 'black' }}>{positionedElements.length === 0 ? 'ALL CLEARED' : 'LET PLAYS'}</h1>
+                <h1 style={positionedElements.length === 0 ? { color: "green" } : (isSatusPoint === true ? { color: 'black' } : { color: 'red' })}>{positionedElements.length === 0 ? (
+                    'ALL CLEARED'
+                ) : (
+                    isSatusPoint === true ? 'LET PLAYS' : 'GAME OVER'
+                )}</h1>
                 <div>
                     <p>Points : <span><input value={valuePoints} onChange={(e) => handleGetPoints(e.target.value)} type="text" /></span></p>
                 </div>
-                <p>Time : <span>{positionedElements.length !== 0 ? count : 0}s</span></p>
+                <p>Time : <span>{positionedElements.length !== 0 ? count.toFixed(1) : 0}s</span></p>
                 <button onClick={handleClickRestart}>Restart</button>
             </div>
             <div ref={containerRef} style={{ width: '500px', height: '400px', border: '1px solid gray', marginTop: '20px', position: 'relative' }}>
                 {positionedElements.map((item, index) => (
-                    <div onClick={() => { flagPoints === item.value ? handleCheck(item.value, item.x) : '' }} style={points == item.x ? {
-                        width: '30px',
-                        height: '30px',
-                        borderRadius: '50%',
-                        textAlign: 'center',
-                        lineHeight: '30px',
-                        border: '２px solid black',
-                        position: 'absolute',
-                        left: `${item.x}px`,
-                        top: `${item.y}px`,
-                        cursor: 'pointer',
-                        backgroundColor: 'red',
-                        overflow: 'hidden',
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        fontSize: '0.8em',
-                        zIndex: 1000 - parseInt(item.value),
-                        transition: 'background-color 0.5s ease-in-out',
-
-                    } : {
+                    <div key={item.value} onClick={() => { handleCheck(item.value, item.x) }} style={{
                         width: '30px',
                         height: '30px',
                         borderRadius: '50%',
@@ -130,14 +111,14 @@ const Game_assignment_test = () => {
                         left: `${item.x}px`,
                         top: `${item.y}px`,
                         cursor: 'pointer',
-                        backgroundColor: points === item.x ? 'red' : 'white',
+                        backgroundColor: points === item.x && item.value !== flagPoints ? 'red' : 'white',
                         overflow: 'hidden',
                         display: 'flex',
                         justifyContent: 'center',
                         alignItems: 'center',
                         fontSize: '0.8em',
                         zIndex: 1000 - parseInt(item.value),
-
+                        transition: 'background-color 0.4s ease-in-out',
                     }} >{item.value}</div>
                 ))}
             </div>
