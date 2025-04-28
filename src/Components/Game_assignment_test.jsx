@@ -15,7 +15,6 @@ const Game_assignment_test = () => {
         setValuePoints(e)
 
     }
-    console.log(isSatusPoint)
 
     const handleClickRestart = () => {
         generateRandomNumber(valuePoints)
@@ -34,7 +33,18 @@ const Game_assignment_test = () => {
             setCount(elapsedMilliseconds / 1000);
         }, 10);
     }
+    if (!isSatusPoint) {
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+        }
 
+        const startTime = Date.now();
+        intervalRef.current = setInterval(() => {
+            const currentTime = Date.now();
+            const elapsedMilliseconds = currentTime - startTime;
+            setCount(elapsedMilliseconds / 1000);
+        }, 10);
+    }
     const generateRandomNumber = (valuePoints) => {
         const Numbers = []
         for (let i = 1; i <= parseInt(valuePoints); i++) {
