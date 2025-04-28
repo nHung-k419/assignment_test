@@ -7,11 +7,11 @@ const Game_assignment_test = () => {
     const [positionedElements, setPositionedElements] = useState([]);
     const [points, setPoints] = useState();
     const [flagPoints, setFlagPoints] = useState(1)
-    const [isStart,setIsStart] = useState(1)
+    const [isStart, setIsStart] = useState(1)
+    const [numbersToRender, setNumbersToRender] = useState([]);
     const containerRef = useRef(null);
     const handleGetPoints = (e) => {
         setValuePoints(e)
-
 
     }
     const handleClickRestart = () => {
@@ -44,18 +44,30 @@ const Game_assignment_test = () => {
         assignRandomPositions();
 
     }, [randomNumbers]);
-    const handleCheck = (keyItem) => {
+
+
+    const handleCheck = (keyItem, x) => {
+        // console.log(keyItem);
+        // console.log(positionedElements);
+
+        let current = keyItem
         setFlagPoints(flagPoints + 1)
-        setPoints(keyItem)   
+        setPoints(x)
+        console.log('flagPoints', flagPoints);
+        console.log('keyItem', keyItem);
         if (flagPoints === keyItem) {
-            console.log(flagPoints);
-            const result = positionedElements.filter(item => item.value !== keyItem)
-            if(result.length === 0){
-                location.reload()
+            let result = positionedElements.filter(item => {
+                if (item.value === current) {
+                    return current = item.value
+                }
+            })
+            const resultOver = positionedElements.filter(itemPoints => itemPoints.value !== result[0].value)
+
+            if (resultOver.length === 0) {
+                setFlagPoints(1)
             }
-            
             const timeOutValid = setTimeout(() => {
-                setPositionedElements(result)
+                setPositionedElements(resultOver)
             }, 700)
             return () => {
                 clearInterval(timeOutValid)
@@ -87,19 +99,24 @@ const Game_assignment_test = () => {
             </div>
             <div ref={containerRef} style={{ width: '500px', height: '400px', border: '1px solid gray', marginTop: '20px', position: 'relative' }}>
                 {positionedElements.map((item, index) => (
-                    <div onClick={() => { flagPoints === item.value ? handleCheck(item.value) : '' }} style={points === item.value ? {
+                    <div onClick={() => { flagPoints === item.value ? handleCheck(item.value, item.x) : '' }} style={points == item.x ? {
                         width: '30px',
                         height: '30px',
                         borderRadius: '50%',
                         textAlign: 'center',
                         lineHeight: '30px',
-                        border: '1px solid gray',
+                        border: '２px solid black',
                         position: 'absolute',
                         left: `${item.x}px`,
                         top: `${item.y}px`,
                         cursor: 'pointer',
                         backgroundColor: 'red',
-                        zIndex: '1',
+                        overflow: 'hidden',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        fontSize: '0.8em',
+                        zIndex: 1000 - parseInt(item.value),
                         transition: 'background-color 0.5s ease-in-out',
 
                     } : {
@@ -108,11 +125,18 @@ const Game_assignment_test = () => {
                         borderRadius: '50%',
                         textAlign: 'center',
                         lineHeight: '30px',
-                        border: '1px solid gray',
+                        border: '2px solid black',
                         position: 'absolute',
                         left: `${item.x}px`,
                         top: `${item.y}px`,
                         cursor: 'pointer',
+                        backgroundColor: points === item.x ? 'red' : 'white',
+                        overflow: 'hidden',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        fontSize: '0.8em',
+                        zIndex: 1000 - parseInt(item.value),
 
                     }} >{item.value}</div>
                 ))}
