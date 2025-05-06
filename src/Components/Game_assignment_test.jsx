@@ -6,21 +6,15 @@ const Game_assignment_test = () => {
     const [valuePoints, setValuePoints] = useState('')
     const [randomNumbers, setRandomNumbers] = useState([]);
     const [positionedElements, setPositionedElements] = useState([]);
-    const [points, setPoints] = useState();
     const [flagPoints, setFlagPoints] = useState(1)
     const [isSatusPoint, setIsStatusPoint] = useState(false)
-    const [fadingOutItem, setFadingOutItem] = useState([]);
     const [checkAfterClick, setCheckAfterClick] = useState([]);
-    const [changeColor, setChangeColor] = useState([]);
+    const [valueButton, setValueButton] = useState('Play')
     const [isAuto, setIsAuto] = useState(false);
-    const [currentAutoIndex, setCurrentAutoIndex] = useState(0);
-    const [idPoint, setIdPoint] = useState(null);
-    const [checkOpacity, setCheckOpacity] = useState(false)
-    const [isCheckTotal, setIsCheckTotal] = useState(0)
+    const [remainingAutoPoints, setRemainingAutoPoints] = useState([]);
     const containerRef = useRef(null);
     const intervalRef = useRef(null);
     const flagRef = useRef(null)
-    const intervalRefTimeout = useRef(null)
     const intervalCurRef = useRef(null);
     const checkAfterClickRef = useRef([]);
     const [pendingDeletions, setPendingDeletions] = useState([]);
@@ -31,16 +25,12 @@ const Game_assignment_test = () => {
 
     const handleClickRestart = () => {
         generateRandomNumber(valuePoints)
-        setFadingOutItem([])
         setCheckAfterClick([])
         setFlagPoints(1)
-        setCount(0)
+        // setCount(0)
+        setValueButton('Restart')
         setIsStatusPoint(true)
-        setChangeColor([])
-        setCheckOpacity(false)
-        setCurrentAutoIndex(0);
         setIsAuto(false)
-        setIsCheckTotal(0)
         setPendingDeletions([])
         if (intervalRef.current) {
             clearInterval(intervalRef.current);
@@ -58,14 +48,15 @@ const Game_assignment_test = () => {
         if (intervalRef.current) {
             clearInterval(intervalRef.current);
         }
-        const startTime = Date.now();
-        intervalRef.current = setInterval(() => {
-            const currentTime = Date.now();
-            const elapsedMilliseconds = currentTime - startTime;
-            setCount(elapsedMilliseconds / 1000);
-        }, 10);
     }
+    useEffect(() => {
+        if (positionedElements.length === 0) {
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+            }
 
+        }
+    }, [count, positionedElements])
     const generateRandomNumber = (valuePoints) => {
         const Numbers = []
         for (let i = 1; i <= parseInt(valuePoints); i++) {
@@ -95,13 +86,11 @@ const Game_assignment_test = () => {
     const handleCheck = (keyItem, x, e) => {
         setFlagPoints(prevFlagPoints => prevFlagPoints + 1);
         setCheckAfterClick(prevAfterClick => [...prevAfterClick, keyItem]);
-        setIdPoint(keyItem);
-        setPoints(x);
         const ripple = document.createElement('div');
         ripple.className = 'ripple';
 
         const targetDiv = document.getElementById(`point-${keyItem}`);
-        if (targetDiv) {
+        if (targetDiv && remainingAutoPoints.length === 0) {
             const rect = targetDiv.getBoundingClientRect();
             const offsetX = e?.clientX - rect?.left;
             const offsetY = e?.clientY - rect?.top;
@@ -113,10 +102,7 @@ const Game_assignment_test = () => {
             setTimeout(() => ripple.remove(), 600);
         }
         if (flagPoints === keyItem) {
-            setIsCheckTotal(prev => prev + 1);
             flagRef.current = flagPoints;
-            setChangeColor(prev => [...prev, keyItem]);
-            setCheckOpacity(true);
 
             setPendingDeletions(prev => [...prev, {
                 value: keyItem,
@@ -134,9 +120,7 @@ const Game_assignment_test = () => {
                         : item
                 )
             );
-            setChangeColor([]);
             setIsStatusPoint(false);
-            setCheckOpacity(false);
         }
     };
 
@@ -164,8 +148,6 @@ const Game_assignment_test = () => {
     // }, [pendingDeletions, isSatusPoint]);
 
     useEffect(() => {
-        console.log(checkAfterClick);
-
         const interval = setInterval(() => {
             setPendingDeletions(prev =>
                 prev.map(item => {
@@ -180,9 +162,6 @@ const Game_assignment_test = () => {
                     return { ...item, opacity: Math.max(0, newOpacity) };
                 }).filter(item => {
                     if (item.opacity <= 0 && !item.stopped && isSatusPoint) {
-                        const livedTime = ((Date.now() - item.createdAt) / 1000).toFixed(1); // tính giây
-                        console.log(`Item ${item.value} existed for ${livedTime} seconds`);
-
                         setPositionedElements(prevPoints =>
                             prevPoints.filter(point => point.value !== item.value)
                         );
@@ -204,11 +183,10 @@ const Game_assignment_test = () => {
     };
 
     // auto click
-    const [remainingAutoPoints, setRemainingAutoPoints] = useState([]);
     useEffect(() => {
         checkAfterClickRef.current = checkAfterClick;
-      }, [checkAfterClick]);
-    
+    }, [checkAfterClick]);
+
     const handleClickAuto = () => {
         setIsAuto(true)
     }
@@ -217,46 +195,42 @@ const Game_assignment_test = () => {
         setRemainingAutoPoints([])
     }
     useEffect(() => {
-        if (isAuto) {
-          const unclicked = positionedElements.filter(
-            item => !checkAfterClick.includes(item.value)
-          );
-          setRemainingAutoPoints(unclicked);
+        if (isAuto && isSatusPoint) {
+            const unclicked = positionedElements.filter(
+                item => !checkAfterClick.includes(item.value)
+            );
+            setRemainingAutoPoints(unclicked);
         }
-      }, [isAuto, positionedElements, checkAfterClick]);
-      useEffect(() => {
+    }, [isAuto, positionedElements, checkAfterClick, isSatusPoint]);
+    useEffect(() => {
         if (!isAuto || remainingAutoPoints.length === 0) return;
-      
+
         const point = remainingAutoPoints[0];
-      
+
         const timer = setTimeout(() => {
-          if (!checkAfterClick.includes(point.value)) {
-            handleCheck(point.value, point.x);
-          }
-      
-          // Xóa point đầu tiên khỏi danh sách
-          setRemainingAutoPoints(prev => prev.slice(1));
+            if (!checkAfterClick.includes(point.value) && isSatusPoint) {
+                handleCheck(point.value, point.x);
+            }
+
+            setRemainingAutoPoints(prev => prev.slice(1));
+
         }, 1000);
-      
+
         return () => clearTimeout(timer);
-      }, [isAuto, remainingAutoPoints]);
+    }, [isAuto, remainingAutoPoints, isSatusPoint]);
 
     const debouncedHandleClick = debounce(handleCheck, 100)
 
     return (
         <div style={{ marginLeft: '40px' }}>
             <div>
-                <h1 style={positionedElements.length === 0 ? { color: "green" } : (isSatusPoint === true ? { color: 'black' } : { color: 'red' })}>{positionedElements.length === 0 ? (
-                    'ALL CLEARED'
-                ) : (
-                    isSatusPoint === true ? 'LET PLAYS' : 'GAME OVER'
-                )}</h1>
+                <h1 style={positionedElements.length === 0 && valueButton === 'Play' ? { color: 'black' } : (positionedElements.length === 0 && valueButton === 'Restart' ? { color: 'green' } : (isSatusPoint === true ? { color: 'black' } : { color: 'red' }))}>{positionedElements.length === 0 && valueButton === 'Play' ? 'LET PLAYS' : (positionedElements.length === 0 && valueButton === 'Restart' ? 'ALL CLEARED' : (isSatusPoint === true ? 'LET PLAYS' : 'GAME OVER'))}</h1>
                 <div>
                     <p>Points : <span><input value={valuePoints} onChange={(e) => handleGetPoints(e.target.value)} type="text" /></span></p>
                 </div>
-                <p>Time : <span>{positionedElements.length !== 0 ? count.toFixed(1) : 0}s</span></p>
-                <button style={{marginRight : '10px'}} onClick={handleClickRestart}>Restart</button> 
-                <button  onClick={ !isAuto ? handleClickAuto : handleClickUnClickAuto}>{!isAuto ? 'Auto Play on' : 'Auto Play Off'}</button>
+                <p>Time : <span>{positionedElements.length !== 0 ? count.toFixed(1) : count.toFixed(1)}s</span></p>
+                <button style={{ marginRight: '10px' }} onClick={handleClickRestart}>{valueButton}</button>
+                {valueButton === 'Restart' ? <button onClick={!isAuto ? handleClickAuto : handleClickUnClickAuto}>{!isAuto ? 'Auto Play On' : 'Auto Play Off'}</button> : ''}
             </div>
             <div ref={containerRef} style={{ width: '500px', height: '400px', border: '1px solid gray', marginTop: '20px', position: 'relative' }}>
                 {positionedElements.map((item, index) => {
