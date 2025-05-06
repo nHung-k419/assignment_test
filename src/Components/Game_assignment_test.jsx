@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { debounce } from 'lodash';
+
 const Game_assignment_test = () => {
     const [count, setCount] = useState(0);
     const [valuePoints, setValuePoints] = useState('')
@@ -7,21 +8,40 @@ const Game_assignment_test = () => {
     const [positionedElements, setPositionedElements] = useState([]);
     const [points, setPoints] = useState();
     const [flagPoints, setFlagPoints] = useState(1)
-    const [isStart, setIsStart] = useState(1)
-    const [isSatusPoint, setIsStatusPoint] = useState(true)
+    const [isSatusPoint, setIsStatusPoint] = useState(false)
+    const [fadingOutItem, setFadingOutItem] = useState([]);
+    const [checkAfterClick, setCheckAfterClick] = useState([]);
+    const [changeColor, setChangeColor] = useState([]);
+    const [isAuto, setIsAuto] = useState(false);
+    const [currentAutoIndex, setCurrentAutoIndex] = useState(0);
+    const [idPoint, setIdPoint] = useState(null);
+    const [checkOpacity, setCheckOpacity] = useState(false)
+    const [isCheckTotal, setIsCheckTotal] = useState(0)
     const containerRef = useRef(null);
     const intervalRef = useRef(null);
+    const flagRef = useRef(null)
+    const intervalRefTimeout = useRef(null)
+    const intervalCurRef = useRef(null);
+    const checkAfterClickRef = useRef([]);
+    const [pendingDeletions, setPendingDeletions] = useState([]);
+
     const handleGetPoints = (e) => {
         setValuePoints(e)
-
     }
 
     const handleClickRestart = () => {
         generateRandomNumber(valuePoints)
-        // setValuePoints('')
+        setFadingOutItem([])
+        setCheckAfterClick([])
         setFlagPoints(1)
         setCount(0)
         setIsStatusPoint(true)
+        setChangeColor([])
+        setCheckOpacity(false)
+        setCurrentAutoIndex(0);
+        setIsAuto(false)
+        setIsCheckTotal(0)
+        setPendingDeletions([])
         if (intervalRef.current) {
             clearInterval(intervalRef.current);
         }
@@ -33,11 +53,11 @@ const Game_assignment_test = () => {
             setCount(elapsedMilliseconds / 1000);
         }, 10);
     }
+
     if (!isSatusPoint) {
         if (intervalRef.current) {
             clearInterval(intervalRef.current);
         }
-
         const startTime = Date.now();
         intervalRef.current = setInterval(() => {
             const currentTime = Date.now();
@@ -45,6 +65,7 @@ const Game_assignment_test = () => {
             setCount(elapsedMilliseconds / 1000);
         }, 10);
     }
+
     const generateRandomNumber = (valuePoints) => {
         const Numbers = []
         for (let i = 1; i <= parseInt(valuePoints); i++) {
@@ -52,6 +73,7 @@ const Game_assignment_test = () => {
         }
         setRandomNumbers(Numbers)
     }
+
     const assignRandomPositions = () => {
         if (!containerRef.current) return;
 
@@ -66,42 +88,161 @@ const Game_assignment_test = () => {
 
         setPositionedElements(positioned);
     };
+
     useEffect(() => {
         assignRandomPositions();
-
     }, [randomNumbers]);
+    const handleCheck = (keyItem, x, e) => {
+        setFlagPoints(prevFlagPoints => prevFlagPoints + 1);
+        setCheckAfterClick(prevAfterClick => [...prevAfterClick, keyItem]);
+        setIdPoint(keyItem);
+        setPoints(x);
+        const ripple = document.createElement('div');
+        ripple.className = 'ripple';
 
+        const targetDiv = document.getElementById(`point-${keyItem}`);
+        if (targetDiv) {
+            const rect = targetDiv.getBoundingClientRect();
+            const offsetX = e?.clientX - rect?.left;
+            const offsetY = e?.clientY - rect?.top;
 
-    const handleCheck = (keyItem, x) => {
-        setFlagPoints(flagPoints + 1)
-        setPoints(x)
-        if (flagPoints === keyItem) {
-            let result = positionedElements.findIndex(item => {
-                if (item.value === keyItem) {
-                    return keyItem = item.value
-                }
-            }) 
-            
-            setTimeout(() => {
-                if(isSatusPoint){
-                    const resultOver = positionedElements.splice(result, 1)
-                    console.log(resultOver);
-                }
-            }, 500)
+            ripple.style.left = `${offsetX}px`;
+            ripple.style.top = `${offsetY}px`;
 
-            // if (resultOver.length === 0) {
-            //     setFlagPoints(1)
-            //     keyItem = 1
-            // }
-            // setTimeout(() => {
-            //     setPositionedElements(resultOver)
-            // }, 700)
-
-        } else {
-            setIsStatusPoint(false)
+            targetDiv.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 600);
         }
+        if (flagPoints === keyItem) {
+            setIsCheckTotal(prev => prev + 1);
+            flagRef.current = flagPoints;
+            setChangeColor(prev => [...prev, keyItem]);
+            setCheckOpacity(true);
+
+            setPendingDeletions(prev => [...prev, {
+                value: keyItem,
+                time: Date.now(),
+                createdAt: Date.now(),
+                stoppedAt: Date.now(),
+                stopped: false,
+                opacity: 1
+            }]);
+        } else {
+            setPendingDeletions(prev =>
+                prev.map(item =>
+                    (Date.now() - item.time < 3000)
+                        ? { ...item, stopped: true }
+                        : item
+                )
+            );
+            setChangeColor([]);
+            setIsStatusPoint(false);
+            setCheckOpacity(false);
+        }
+    };
+
+    // useEffect(() => {
+    //     if (pendingDeletions.length === 0) return;
+
+    //     intervalRefTimeout.current = setInterval(() => {
+    //         const now = Date.now();
+
+    //         setPendingDeletions(prev =>
+    //             prev.filter(item => {
+    //                 if (item.stopped) return true;
+    //                 if (now - item.time >= 3000 && isSatusPoint === true) {
+    //                     setPositionedElements(prevPoints =>
+    //                         prevPoints.filter(point => point.value !== item.value)
+    //                     );
+    //                     return false;
+    //                 }
+    //                 return true;
+    //             })
+    //         );
+    //     }, 500);
+
+    //     return () => clearInterval(intervalRefTimeout.current);
+    // }, [pendingDeletions, isSatusPoint]);
+
+    useEffect(() => {
+        console.log(checkAfterClick);
+
+        const interval = setInterval(() => {
+            setPendingDeletions(prev =>
+                prev.map(item => {
+                    if (item.stopped) {
+                        if (item.stoppedRemainingTime == null) {
+                            const remaining = Math.max(0, (3000 - (Date.now() - item.createdAt)) / 1000).toFixed(1);
+                            return { ...item, stoppedRemainingTime: remaining };
+                        }
+                        return item;
+                    }
+                    const newOpacity = item.opacity - 1 / (3000 / 200);;
+                    return { ...item, opacity: Math.max(0, newOpacity) };
+                }).filter(item => {
+                    if (item.opacity <= 0 && !item.stopped && isSatusPoint) {
+                        const livedTime = ((Date.now() - item.createdAt) / 1000).toFixed(1); // tính giây
+                        console.log(`Item ${item.value} existed for ${livedTime} seconds`);
+
+                        setPositionedElements(prevPoints =>
+                            prevPoints.filter(point => point.value !== item.value)
+                        );
+                        return false;
+                    }
+                    return true;
+                })
+            );
+        }, 180);
+
+        return () => clearInterval(interval);
+    }, [isSatusPoint]);
+
+    const getOpacityForPoint = (value) => {
+        const item = pendingDeletions.find(d => d.value === value);
+        // console.log('item',item);
+
+        return item ? item.opacity : 1;
+    };
+
+    // auto click
+    const [remainingAutoPoints, setRemainingAutoPoints] = useState([]);
+    useEffect(() => {
+        checkAfterClickRef.current = checkAfterClick;
+      }, [checkAfterClick]);
+    
+    const handleClickAuto = () => {
+        setIsAuto(true)
     }
+    const handleClickUnClickAuto = () => {
+        setIsAuto(false)
+        setRemainingAutoPoints([])
+    }
+    useEffect(() => {
+        if (isAuto) {
+          const unclicked = positionedElements.filter(
+            item => !checkAfterClick.includes(item.value)
+          );
+          setRemainingAutoPoints(unclicked);
+        }
+      }, [isAuto, positionedElements, checkAfterClick]);
+      useEffect(() => {
+        if (!isAuto || remainingAutoPoints.length === 0) return;
+      
+        const point = remainingAutoPoints[0];
+      
+        const timer = setTimeout(() => {
+          if (!checkAfterClick.includes(point.value)) {
+            handleCheck(point.value, point.x);
+          }
+      
+          // Xóa point đầu tiên khỏi danh sách
+          setRemainingAutoPoints(prev => prev.slice(1));
+        }, 1000);
+      
+        return () => clearTimeout(timer);
+      }, [isAuto, remainingAutoPoints]);
+
     const debouncedHandleClick = debounce(handleCheck, 100)
+
     return (
         <div style={{ marginLeft: '40px' }}>
             <div>
@@ -114,31 +255,48 @@ const Game_assignment_test = () => {
                     <p>Points : <span><input value={valuePoints} onChange={(e) => handleGetPoints(e.target.value)} type="text" /></span></p>
                 </div>
                 <p>Time : <span>{positionedElements.length !== 0 ? count.toFixed(1) : 0}s</span></p>
-                <button onClick={handleClickRestart}>Restart</button>
+                <button style={{marginRight : '10px'}} onClick={handleClickRestart}>Restart</button> 
+                <button  onClick={ !isAuto ? handleClickAuto : handleClickUnClickAuto}>{!isAuto ? 'Auto Play on' : 'Auto Play Off'}</button>
             </div>
             <div ref={containerRef} style={{ width: '500px', height: '400px', border: '1px solid gray', marginTop: '20px', position: 'relative' }}>
-                {positionedElements.map((item, index) => (
-                    <div key={item.value} onClick={() => { debouncedHandleClick(item.value, item.x) }} style={{
-                        width: '30px',
-                        height: '30px',
-                        borderRadius: '50%',
-                        textAlign: 'center',
-                        lineHeight: '30px',
-                        border: '2px solid black',
-                        position: 'absolute',
-                        left: `${item.x}px`,
-                        top: `${item.y}px`,
-                        cursor: 'pointer',
-                        backgroundColor: points === item.x && item.value !== flagPoints ? 'red' : 'white',
-                        overflow: 'hidden',
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        fontSize: '0.8em',
-                        zIndex: 1000 - parseInt(item.value),
-                        transition: 'background-color 0.4s ease-in-out',
-                    }} >{item.value}</div>
-                ))}
+                {positionedElements.map((item, index) => {
+                    const pendingItem = pendingDeletions.find(p => p.value === item.value);
+                    const remainingTime = pendingItem
+                        ? pendingItem.stopped && pendingItem.stoppedRemainingTime != null
+                            ? pendingItem.stoppedRemainingTime
+                            : Math.max(0, (3000 - (Date.now() - pendingItem.createdAt)) / 1000).toFixed(1)
+                        : null;
+                    return (
+                        <div id={`point-${item.value}`}>
+
+                            <div ref={intervalCurRef} key={item.value} onClick={(e) => { debouncedHandleClick(item.value, item.x, e) }} style={{
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '50%',
+                                // textAlign: 'center',
+                                lineHeight: '30px',
+                                border: '1px solid black',
+                                position: 'absolute',
+                                left: `${item.x}px`,
+                                top: `${item.y}px`,
+                                cursor: 'pointer',
+                                backgroundColor: checkAfterClick.includes(item.value) ? 'red' : 'white',
+                                overflow: 'hidden',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                fontSize: '0.8em',
+                                zIndex: 1000 - parseInt(item.value),
+                                transition: 'opacity 0.2s linear',
+                                opacity: getOpacityForPoint(item.value),
+                                marginBottom: '10px'
+                            }} ><p style={{ fontSize: '12px', position: 'absolute', top: '-10px' }}>{item.value}</p>
+                                <p style={{ position: 'absolute', bottom: '-15px', color: 'white', fontSize: '10px' }}>{remainingTime ? remainingTime + 's' : ''}</p>
+                            </div>
+
+                        </div>
+                    )
+                })}
             </div>
         </div >
     )
