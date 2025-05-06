@@ -73,8 +73,8 @@ const Game_assignment_test = () => {
 
         const positioned = randomNumbers.map(element => ({
             value: randomNumbers[element - 1],
-            x: Math.random() * containerWidth,
-            y: Math.random() * containerHeight,
+            x: Math.random() * (containerWidth - 40),
+            y: Math.random() * (containerHeight - 40),
         }));
 
         setPositionedElements(positioned);
@@ -124,29 +124,6 @@ const Game_assignment_test = () => {
         }
     };
 
-    // useEffect(() => {
-    //     if (pendingDeletions.length === 0) return;
-
-    //     intervalRefTimeout.current = setInterval(() => {
-    //         const now = Date.now();
-
-    //         setPendingDeletions(prev =>
-    //             prev.filter(item => {
-    //                 if (item.stopped) return true;
-    //                 if (now - item.time >= 3000 && isSatusPoint === true) {
-    //                     setPositionedElements(prevPoints =>
-    //                         prevPoints.filter(point => point.value !== item.value)
-    //                     );
-    //                     return false;
-    //                 }
-    //                 return true;
-    //             })
-    //         );
-    //     }, 500);
-
-    //     return () => clearInterval(intervalRefTimeout.current);
-    // }, [pendingDeletions, isSatusPoint]);
-
     useEffect(() => {
         const interval = setInterval(() => {
             setPendingDeletions(prev =>
@@ -177,8 +154,6 @@ const Game_assignment_test = () => {
 
     const getOpacityForPoint = (value) => {
         const item = pendingDeletions.find(d => d.value === value);
-        // console.log('item',item);
-
         return item ? item.opacity : 1;
     };
 
@@ -211,7 +186,6 @@ const Game_assignment_test = () => {
             if (!checkAfterClick.includes(point.value) && isSatusPoint) {
                 handleCheck(point.value, point.x);
             }
-
             setRemainingAutoPoints(prev => prev.slice(1));
 
         }, 1000);
@@ -232,7 +206,7 @@ const Game_assignment_test = () => {
                 <button style={{ marginRight: '10px' }} onClick={handleClickRestart}>{valueButton}</button>
                 {valueButton === 'Restart' ? <button onClick={!isAuto ? handleClickAuto : handleClickUnClickAuto}>{!isAuto ? 'Auto Play On' : 'Auto Play Off'}</button> : ''}
             </div>
-            <div ref={containerRef} style={{ width: '500px', height: '400px', border: '1px solid gray', marginTop: '20px', position: 'relative' }}>
+            <div ref={containerRef} style={{ width: '500px', height: '400px', border: '3px solid black', marginTop: '20px', position: 'relative' }}>
                 {positionedElements.map((item, index) => {
                     const pendingItem = pendingDeletions.find(p => p.value === item.value);
                     const remainingTime = pendingItem
@@ -244,12 +218,12 @@ const Game_assignment_test = () => {
                         <div id={`point-${item.value}`}>
 
                             <div ref={intervalCurRef} key={item.value} onClick={(e) => { debouncedHandleClick(item.value, item.x, e) }} style={{
-                                width: '40px',
-                                height: '40px',
+                                width: '42px',
+                                height: '42px',
                                 borderRadius: '50%',
                                 // textAlign: 'center',
                                 lineHeight: '30px',
-                                border: '1px solid black',
+                                border: checkAfterClick.includes(item.value) ? '' : '1px solid black',
                                 position: 'absolute',
                                 left: `${item.x}px`,
                                 top: `${item.y}px`,
@@ -264,14 +238,14 @@ const Game_assignment_test = () => {
                                 transition: 'opacity 0.2s linear',
                                 opacity: getOpacityForPoint(item.value),
                                 marginBottom: '10px'
-                            }} ><p style={{ fontSize: '12px', position: 'absolute', top: '-10px' }}>{item.value}</p>
-                                <p style={{ position: 'absolute', bottom: '-15px', color: 'white', fontSize: '10px' }}>{remainingTime ? remainingTime + 's' : ''}</p>
+                            }} ><p style={{ fontSize: '13px', position: 'absolute', top: checkAfterClick.includes(item.value) ? '-12px' : '', fontWeight: checkAfterClick.includes(item.value) ? '400' : '0' }}>{item.value}</p>
+                                <p style={{ position: 'absolute', bottom: '-15px', color: 'white', fontSize: '12px', textAlign: 'center' }}>{remainingTime ? remainingTime + 's' : ''}</p>
                             </div>
-
                         </div>
                     )
                 })}
             </div>
+            {positionedElements.length > 0 ? <p>Next : {flagPoints}</p> : ''}
         </div >
     )
 }
