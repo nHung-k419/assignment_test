@@ -179,9 +179,7 @@ const Game_assignment_test = () => {
     }, [isAuto, positionedElements, checkAfterClick, isSatusPoint]);
     useEffect(() => {
         if (!isAuto || remainingAutoPoints.length === 0) return;
-
         const point = remainingAutoPoints[0];
-
         const timer = setTimeout(() => {
             if (!checkAfterClick.includes(point.value) && isSatusPoint) {
                 handleCheck(point.value, point.x);
@@ -189,7 +187,6 @@ const Game_assignment_test = () => {
             setRemainingAutoPoints(prev => prev.slice(1));
 
         }, 1000);
-
         return () => clearTimeout(timer);
     }, [isAuto, remainingAutoPoints, isSatusPoint]);
 
@@ -203,8 +200,8 @@ const Game_assignment_test = () => {
                     <p>Points : <span><input value={valuePoints} onChange={(e) => handleGetPoints(e.target.value)} type="text" /></span></p>
                 </div>
                 <p>Time : <span>{positionedElements.length !== 0 ? count.toFixed(1) : count.toFixed(1)}s</span></p>
-                <button style={{ marginRight: '10px' }} onClick={handleClickRestart}>{valueButton}</button>
-                {valueButton === 'Restart' ? <button onClick={!isAuto ? handleClickAuto : handleClickUnClickAuto}>{!isAuto ? 'Auto Play On' : 'Auto Play Off'}</button> : ''}
+                <button disabled={valuePoints === ''} style={{ marginRight: '10px' }} onClick={handleClickRestart}>{valueButton}</button>
+                {valueButton === 'Restart' && positionedElements.length > 0 ? <button onClick={!isAuto ? handleClickAuto : handleClickUnClickAuto}>{!isAuto ? 'Auto Play ON' : 'Auto Play OFF'}</button> : ''}
             </div>
             <div ref={containerRef} style={{ width: '500px', height: '400px', border: '3px solid black', marginTop: '20px', position: 'relative' }}>
                 {positionedElements.map((item, index) => {
@@ -216,8 +213,7 @@ const Game_assignment_test = () => {
                         : null;
                     return (
                         <div id={`point-${item.value}`}>
-
-                            <div ref={intervalCurRef} key={item.value} onClick={(e) => { debouncedHandleClick(item.value, item.x, e) }} style={{
+                            <div ref={intervalCurRef} key={item.value} onClick={(e) => { isSatusPoint === true && debouncedHandleClick(item.value, item.x, e) }} style={{
                                 width: '42px',
                                 height: '42px',
                                 borderRadius: '50%',
